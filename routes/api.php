@@ -21,4 +21,7 @@ Route::middleware(['api', 'web'])->group(function () {
     // Local data routes
     Route::get('/xero/local/accounts', [XeroController::class, 'getLocalAccounts']);
     Route::get('/xero/local/vendors', [XeroController::class, 'getLocalVendors']);
+
+    // Disconnect route
+    Route::match(['get', 'post'], '/xero/auth/disconnect', [XeroController::class, 'disconnect']);
 });

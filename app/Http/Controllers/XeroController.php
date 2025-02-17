@@ -136,7 +136,32 @@ class XeroController extends Controller
             // Optional: Also store in file system for persistence
             Storage::put('xero/tokens/token.json', json_encode($tokenData));
 
-            return response()->json(['message' => 'Successfully authenticated with Xero']);
+            // Fetch vendors and accounts after successful authentication
+            try {
+                // Get vendors
+                $vendorsResponse = $this->getVendors();
+                $vendorsData = $vendorsResponse->getData();
+
+                // Get accounts
+                $accountsResponse = $this->getAccounts();
+                $accountsData = $accountsResponse->getData();
+
+                return response()->json([
+                    'message' => 'Successfully authenticated with Xero',
+                    'vendors' => $vendorsData,
+                    'accounts' => $accountsData
+                ]);
+
+            } catch (\Exception $e) {
+                Log::error('Failed to fetch initial data', [
+                    'error' => $e->getMessage()
+                ]);
+
+                return response()->json([
+                    'message' => 'Authentication successful but failed to fetch initial data',
+                    'error' => $e->getMessage()
+                ]);
+            }
 
         } catch (IdentityProviderException $e) {
             echo "Callback failed";
@@ -217,6 +242,14 @@ class XeroController extends Controller
     public function getLocalVendors()
     {
         try {
+            // First check if user is authenticated
+            if (!Session::has('xero_token') && !Storage::exists('xero/tokens/token.json')) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Not authenticated with Xero. Please connect first.'
+                ], 401);
+            }
+
             $content = Storage::get('xero/data/vendors.json');
             if ($content) {
                 return json_decode($content, true);
@@ -299,6 +332,14 @@ class XeroController extends Controller
     public function getLocalAccounts()
     {
         try {
+            // First check if user is authenticated
+            if (!Session::has('xero_token') && !Storage::exists('xero/tokens/token.json')) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Not authenticated with Xero. Please connect first.'
+                ], 401);
+            }
+
             $content = Storage::get('xero/data/accounts.json');
             if ($content) {
                 return json_decode($content, true);
@@ -316,6 +357,52 @@ class XeroController extends Controller
                 'success' => false,
                 'error' => 'No local accounts data found.'
             ], 404);
+        }
+    }
+
+    public function disconnect()
+    {
+        try {
+            // Clear session data
+            Session::forget('xero_token');
+            Session::forget('oauth2state');
+
+            // Clear cached files
+            Storage::delete([
+                'xero/tokens/token.json',
+                'xero/data/vendors.json',
+                'xero/data/accounts.json'
+            ]);
+
+            // Clear cache without using tags
+            Cache::forget('xero_token');
+            Cache::forget('oauth2state');
+
+            // Add debug logging
+            Log::info('Xero - Disconnect process', [
+                'session_cleared' => !Session::has('xero_token'),
+                'files_deleted' => !Storage::exists('xero/tokens/token.json'),
+                'cache_cleared' => !Cache::has('xero_token')
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully disconnected from Xero'
+            ]);
+
+        } catch (\Exception $e) {
+            // Enhanced error logging
+            Log::error('Xero - Disconnect failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to disconnect from Xero: ' . $e->getMessage()
+            ], 500);
         }
     }
 }
