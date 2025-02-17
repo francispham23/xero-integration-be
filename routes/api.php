@@ -9,7 +9,7 @@ use App\Http\Controllers\XeroController;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['api', 'web'])->group(function () {
+Route::middleware(['api', 'web', \App\Http\Middleware\Cors::class])->group(function () {
     // Auth routes
     Route::get('/xero/auth/authorize', [XeroController::class, 'authorize']);
     Route::get('/xero/auth/callback', [XeroController::class, 'callback']);

@@ -72,7 +72,7 @@ class XeroController extends Controller
             'state' => $state
         ]);
 
-        return redirect($authorizationUrl);
+        return response()->json(['url' => $authorizationUrl]);
     }
 
     public function callback(Request $request)
@@ -138,35 +138,29 @@ class XeroController extends Controller
 
             // Fetch vendors and accounts after successful authentication
             try {
-                // Get vendors
+                // Get vendors and accounts
                 $vendorsResponse = $this->getVendors();
-                $vendorsData = $vendorsResponse->getData();
-
-                // Get accounts
                 $accountsResponse = $this->getAccounts();
-                $accountsData = $accountsResponse->getData();
 
-                return response()->json([
-                    'message' => 'Successfully authenticated with Xero',
-                    'vendors' => $vendorsData,
-                    'accounts' => $accountsData
-                ]);
-
+                // Redirect to frontend with success status
+                return redirect('http://localhost:5173?auth=success');
             } catch (\Exception $e) {
-                Log::error('Failed to fetch initial data', [
+                Log::error('Xero OAuth - Error fetching data after authentication', [
                     'error' => $e->getMessage()
                 ]);
-
-                return response()->json([
-                    'message' => 'Authentication successful but failed to fetch initial data',
-                    'error' => $e->getMessage()
-                ]);
+                return redirect('http://localhost:5173?auth=error&message=' . urlencode($e->getMessage()));
             }
 
         } catch (IdentityProviderException $e) {
-            echo "Callback failed";
-            return response()->json(['error' => $e->getMessage()], 500);
-
+            Log::error('Xero OAuth - Identity Provider Exception', [
+                'error' => $e->getMessage()
+            ]);
+            return redirect('http://localhost:5173?auth=error&message=' . urlencode('Failed to authenticate with Xero'));
+        } catch (\Exception $e) {
+            Log::error('Xero OAuth - General Exception', [
+                'error' => $e->getMessage()
+            ]);
+            return redirect('http://localhost:5173?auth=error&message=' . urlencode($e->getMessage()));
         }
     }
 
@@ -385,10 +379,10 @@ class XeroController extends Controller
                 'cache_cleared' => !Cache::has('xero_token')
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Successfully disconnected from Xero'
-            ]);
+            return response('', 200)
+                ->header('Access-Control-Allow-Origin', 'http://localhost:5173')
+                ->header('Access-Control-Allow-Credentials', 'true')
+                ->header('Location', 'http://localhost:5173');
 
         } catch (\Exception $e) {
             // Enhanced error logging
@@ -399,10 +393,7 @@ class XeroController extends Controller
                 'file' => $e->getFile()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'error' => 'Failed to disconnect from Xero: ' . $e->getMessage()
-            ], 500);
+            return redirect('http://localhost:5173');
         }
     }
 }
