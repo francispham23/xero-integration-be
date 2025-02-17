@@ -38,11 +38,7 @@ return [
          * https://developer.xero.com/documentation/oauth2/scopes
          ************************************************************************/
         'scopes' => [
-            'openid',
-            'email',
-            'profile',
-            'offline_access',
-            'accounting.settings',
+'openid email profile offline_access assets projects accounting.settings accounting.transactions accounting.contacts accounting.journals.read accounting.reports.read accounting.attachments'
         ],
 
         /************************************************************************
@@ -55,7 +51,7 @@ return [
          * Unless you wish to change the default behaviour you should not need to
          * change this
          ************************************************************************/
-        'redirect_uri' => 'xero.auth.callback',
+        'redirect_uri' => env('XERO_REDIRECT_URI', 'xero.auth.callback'),
 
         /************************************************************************
          * If the 'redirect_uri' is not a route name, but rather a full url set
