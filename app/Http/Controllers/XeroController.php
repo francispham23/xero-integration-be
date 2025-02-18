@@ -72,7 +72,7 @@ class XeroController extends Controller
             'state' => $state
         ]);
 
-        return response()->json(['url' => $authorizationUrl]);
+        return response()->json(['url' => $authorizationUrl, 'section_id' => Session::getId()]);
     }
 
     public function callback(Request $request)
@@ -139,11 +139,11 @@ class XeroController extends Controller
             // Fetch vendors and accounts after successful authentication
             try {
                 // Get vendors and accounts
-                $vendorsResponse = $this->getVendors();
-                $accountsResponse = $this->getAccounts();
+                $this->getVendors();
+                $this->getAccounts();
 
                 // Redirect to frontend with success status
-                return redirect('http://localhost:5173?auth=success');
+                return redirect('http://localhost:5173?auth=' . urlencode(Session::getId()));
             } catch (\Exception $e) {
                 Log::error('Xero OAuth - Error fetching data after authentication', [
                     'error' => $e->getMessage()
