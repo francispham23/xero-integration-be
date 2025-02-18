@@ -1,66 +1,174 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Xero Integration Backend
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This backend service provides integration with Xero's API for managing financial data and transactions.
 
-## About Laravel
+## Business Requirements
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+-   Data Extraction: Fetch Vendors (Contacts) and Accounts from Xero via API.
+-   Storage: Persist data as JSON files on disk for subsequent processing.
+-   Security: Securely manage Xero OAuth2 credentials and tokens.
+-   Auditability: Log extraction activities and errors.
+-   User Interface: Provide a simple web UI to trigger data extraction.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+-   OAuth2 authentication with Xero
+-   Automatic token refresh handling
+-   Fetch and store Vendors (Contacts) data
+-   Fetch and store Chart of Accounts
+-   JSON file storage for data persistence
+-   Error handling and logging
+-   Simple web interface for manual data extraction
 
-## Learning Laravel
+## Technology Stack
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+-   PHP 8.x
+-   Laravel 11.x
+-   Laravel Xero OAuth2 Package
+-   React (Frontend)
+-   MySQL (Session Storage)
+-   File System Storage (JSON)
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Setup Steps
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+1.  **Prerequisites**
 
-## Laravel Sponsors
+    -   PHP 8
+    -   Laravel 11
+    -   Composer
+    -   Node.js (v18 or higher)
+    -   npm
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+2.  **Installation**
 
-### Premium Partners
+    ```bash
+    # Clone the repository
+    git clone https://github.com/francispham23/xero-integration-be.git
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+    # Navigate to project directory
+    cd xero-integration-be
 
-## Contributing
+    # Install PHP dependencies
+    composer install
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+    # Install Node.js dependencies
+    npm install
 
-## Code of Conduct
+    # Generate application key
+    php artisan key:generate
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+    # Run database migrations
+    php artisan migrate
+    ```
 
-## Security Vulnerabilities
+3.  **Setup Xero Developer Account**
+    -   Register at [Xero Developer Portal](https://developer.xero.com/)
+    -   Create a sample company and load it with sample data
+    -   Setup follow [this documentation](https://webfox.github.io/laravel-xero-oauth2/)
+    -   Configure OAuth2 credentials in your Xero app:
+        -   Set redirect URL to: `http://localhost:8000/api/xero/callback`
+        -   Add required scopes: `accounting.settings.read`, `accounting.contacts.read`
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Environment Variables
 
-## License
+Add the following variables to your `.env` file:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```env
+# Xero OAuth
+XERO_CLIENT_ID=your_client_id
+XERO_CLIENT_SECRET=your_client_secret
+XERO_REDIRECT_URI=http://localhost:8000/api/xero/auth/callback
+XERO_CREDENTIAL_DISK=local
+```
+
+## System Architecture
+
+```
+[Frontend (React)]
+       ↑
+       |
+       ↓
+[Backend (Laravel)]─────→[Xero API]
+       ↑                     |
+       |                     ↓
+       └─────────────[Disk Storage (JSON)]
+```
+
+## Backend System Components
+
+-   OAuth2 authentication with Xero
+-   API endpoints to fetch and store Vendors/Accounts
+-   File storage and data extraction (accounts.json and vendors.json)
+-   Error Handling & Logging
+
+## API Endpoints
+
+### Authentication
+
+-   `GET /api/xero/auth/authorize` - Initiate Xero OAuth2 flow
+-   `GET /api/xero/callback` - Handle OAuth2 callback
+-   `POST /api/xero/auth/disconnect` - Disconnect from Xero
+
+### Data Extraction
+
+-   `GET /api/xero/local/vendors` - Get stored vendors data
+-   `GET /api/xero/local/accounts` - Get stored accounts data
+-   `POST /api/xero/sync/vendors` - Trigger vendors sync from Xero
+-   `POST /api/xero/sync/accounts` - Trigger accounts sync from Xero
+
+## Error Handling
+
+The application handles various error scenarios:
+
+-   OAuth2 authentication failures
+-   Xero API rate limits
+-   Network connectivity issues
+-   Invalid data formats
+-   File system errors
+
+Errors are:
+
+-   Logged to Laravel's logging system
+-   Returned as JSON responses with appropriate HTTP status codes
+-   Displayed in the UI with user-friendly messages
+
+## Development
+
+```bash
+# Start the development server
+php artisan serve
+
+# Watch for frontend changes (React App)
+npm run dev
+```
+
+## Testing
+
+```bash
+# Run PHP unit tests
+php artisan test
+
+# Run frontend tests
+npm test
+```
+
+## Troubleshooting
+
+Common issues and solutions:
+
+1. **OAuth2 Connection Issues**
+
+    - Verify Xero credentials in `.env`
+    - Check redirect URI configuration
+    - Ensure required scopes are enabled
+
+2. **Data Sync Problems**
+
+    - Check Xero API status
+    - Verify file system permissions
+    - Review Laravel logs
+
+3. **Development Setup**
+    - Clear Laravel cache: `php artisan cache:clear`
+    - Reset database: `php artisan migrate:fresh`
+    - Update dependencies: `composer update && npm update`
